@@ -1,0 +1,1 @@
+{"dataset_source": "eriktks/conll2003 {'revision': 'refs/convert/parquet'}", "quick": false, "seeds": [42, 13, 1234], "split_sizes": {"train": 14041, "validation": 3250, "test": 3453}, "label_names": ["O", "B-PER", "I-PER", "B-ORG", "I-ORG", "B-LOC", "I-LOC", "B-MISC", "I-MISC"]}

@@ -1,0 +1,16 @@
+.venv/
+outputs/
+outputs_quick/
+results_quick/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.cache/
+hf_cache/
+.DS_Store
+*.log
+# original assignment brief (if dropped into the folder)
+*Assignment*.pdf
+*Assignment*.docx
