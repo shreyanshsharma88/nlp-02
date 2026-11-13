@@ -163,3 +163,15 @@ Note: the module is called `ner/tokenize.py` inside a package, so it never shado
 
 ## Status
 - **Phase 1 (done 2026-11-13):** env set up, dataset source resolved, profile + timings recorded, plan audited.
+- **Phase 2 (build, 2026-11-13):** `ner/` package, `run_all.py` (resumable, `--quick`, `--stage`, `--case-aug`), notebook
+  builder, report builder, tests, README, contribution sheet, zip script written; quick end-to-end run passes.
+  Fixes found while building: (1) transformers 5 removed `warmup_ratio` → `warmup_steps=0.1` (float = ratio);
+  (2) **`load_best_model_at_end` bug in transformers 5**: the Trainer reloads the best checkpoint without the
+  `LayerNorm.gamma/beta → weight/bias` key conversion and silently keeps last-epoch LayerNorm weights; we track the
+  best checkpoint ourselves, reload it with `from_pretrained`, and assert its validation F1 equals the logged best;
+  (3) `datasets` 5 returns lazy `Column` objects → converted to lists before JSON.
+  Extra experiment added: cased model with case augmentation (25% lower / 10% upper training sentences, seed 42).
+  Git: HTTPS push asked for credentials → remote switched to SSH.
+- **Compute decision (2026-11-13):** local MPS training was stopped on request; full training moves to the group's
+  Virtual Lab GPU via `run_lab.sh`. The project now lives at `~/nlp-02` (the original local folder was removed).
+  Remaining: lab run → copy back `results/` → narrative text → executed notebook, report, README table, zip.

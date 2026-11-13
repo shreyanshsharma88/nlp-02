@@ -10,7 +10,8 @@ __pycache__/
 .cache/
 hf_cache/
 .DS_Store
-*.log
+/*.log
+results_lab.zip
 # original assignment brief (if dropped into the folder)
 *Assignment*.pdf
 *Assignment*.docx
