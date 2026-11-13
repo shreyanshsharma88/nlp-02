@@ -360,7 +360,22 @@ def build(res_dir, out):
     story.append(P("Appendix B. Environment", H1))
     story.append(P(f"{R['meta']['platform']}; Python {R['meta']['python']}; torch {R['meta']['torch']}; "
                    f"transformers {R['meta']['transformers']}; training device: {tr[c]['device']}."))
-    story.append(P(N.get("evidence", "")))
+    shots_dir = os.path.join(ROOT, "screenshots")
+    shots = sorted(f for f in os.listdir(shots_dir) if f.lower().endswith(".png")) if os.path.isdir(shots_dir) else []
+    if os.path.exists(os.path.join(shots_dir, "VIRTUAL_LAB.txt")):
+        story.append(P("Appendix D. Evidence of execution (Virtual Lab)", H1))
+        story.append(P(open(os.path.join(shots_dir, "VIRTUAL_LAB.txt")).read().strip()))
+        env_txt = os.path.join(res_dir, "logs", "lab_environment.txt")
+        if os.path.exists(env_txt):
+            story.append(P("<font face='Courier' size='6.5'>" + open(env_txt).read().replace("&", "&amp;")
+                           .replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>").replace(" ", "&nbsp;")
+                           + "</font>", SMALL))
+        for f in shots:
+            story += fig(os.path.join(shots_dir, f), 15, os.path.splitext(f)[0].replace("_", " "))
+    elif shots:
+        story.append(P("Appendix D. Screenshots", H1))
+        for f in shots:
+            story += fig(os.path.join(shots_dir, f), 15, os.path.splitext(f)[0].replace("_", " "))
     story.append(P("Appendix C. References", H1))
     for ref in [
         "J. Devlin, M.-W. Chang, K. Lee, K. Toutanova. BERT: Pre-training of Deep Bidirectional Transformers for "

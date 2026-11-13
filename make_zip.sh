@@ -9,7 +9,7 @@ NAME="${GROUP}_NLP_Assignment2"
 STAGE="dist/${NAME}"
 rm -rf "$STAGE" "dist/${NAME}.zip"
 mkdir -p "$STAGE"
-FILES=(README.md PLAN.md requirements.txt requirements-dev.txt pytest.ini .gitignore run_all.py make_zip.sh
+FILES=(README.md PLAN.md requirements.txt requirements-dev.txt pytest.ini .gitignore run_all.py run_lab.sh make_zip.sh
        NER_Cased_vs_Uncased.ipynb NER_Cased_vs_Uncased.html NER_Cased_vs_Uncased.pdf
        "${GROUP}_Contribution.xlsx" report/Report.pdf report/build_report.py report/narrative.py report/__init__.py)
 for f in "${FILES[@]}"; do
