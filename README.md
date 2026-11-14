@@ -15,6 +15,8 @@ Repository: https://github.com/shreyanshsharma88/nlp-02 · Deadline: **16 Novemb
 ---
 
 ## Contents
+> **Working only on the Virtual Lab with no GPU? Start at [Virtual Lab only: complete workflow (CPU, no GPU)](#virtual-lab-only-complete-workflow-cpu-no-gpu).**
+
 1. [Project summary](#project-summary)
 2. [Project status](#project-status)
 3. [Step-by-step: from here to submission](#step-by-step-from-here-to-submission)
@@ -75,9 +77,156 @@ evaluation code, using Hugging Face `datasets`, `transformers` (`Trainer`) and `
 
 ---
 
+## Virtual Lab only: complete workflow (CPU, no GPU)
+**Use this section if you do everything on the Virtual Lab and the lab machine has no GPU** (`nvidia-smi` is not
+available). It replaces Parts 1–4 below; those describe the GPU lab + local Mac route.
+
+### Two kinds of terminal
+Every command below says which terminal to use.
+
+| Name | How to open it | Prompt looks like |
+|---|---|---|
+| **Normal terminal** | New terminal (VS Code: Terminal → New Terminal), then run `conda deactivate` until `(base)` disappears. Do **not** activate `.venv`. | `[user@ip-... nlp-02]$` |
+| **venv terminal** | Normal terminal, then `cd ~/Desktop/nlp-02 && source .venv/bin/activate` | `(.venv) [user@ip-... nlp-02]$` (no `(base)`) |
+
+`run_lab.sh` creates and activates `.venv` itself, so you start it from a **normal terminal**. Any `python`,
+`pytest` or `jupyter` command you type yourself needs the **venv terminal**. If you see both `(.venv)` and `(base)`,
+run `conda deactivate` (repeat until `(base)` is gone), then `source .venv/bin/activate` again: conda packages
+mixing into the venv cause the `h11` / `httpcore` pip conflict warnings.
+
+### L1. Get the code (normal terminal)
+```bash
+conda deactivate                      # repeat until "(base)" is gone
+cd ~/Desktop
+git clone https://github.com/shreyanshsharma88/nlp-02.git    # or download the ZIP from GitHub and unzip
+cd nlp-02
+rm -rf .venv                          # only if an old/broken .venv exists
+git config user.name  "<your name>"   # local to this repo only
+git config user.email "<your email>"
+```
+If you already have an old `nlp-02-main` folder from an earlier ZIP, don't use it; it lacks the CPU support.
+📸 **S1**: this terminal after the clone, with the lab desktop/portal visible.
+
+### L2. Quick smoke run, CPU (normal terminal)
+```bash
+cd ~/Desktop/nlp-02
+nproc                                  # number of CPU cores; note it
+time ALLOW_CPU=1 SEEDS="42" bash run_lab.sh --quick
+```
+- First run installs packages (5–10 min). pip may print `dependency conflicts ... h11` warnings; ignore them.
+- Must end with `QUICK RUN FINISHED`. Note the `real` time printed by `time`.
+- If it stops with a `Traceback`, copy the last 30 lines and send them to the team.
+
+📸 **S2**: `cat results/logs/lab_environment.txt` (machine, `nvidia-smi not available`, torch, `cuda available: False`).
+📸 **S3**: the `WARNING: no CUDA GPU - running on CPU` line and the quick run's final lines.
+
+### L3. Full run, CPU (normal terminal, inside tmux)
+```bash
+cd ~/Desktop/nlp-02
+tmux new -s ner                        # if tmux is missing: nohup ALLOW_CPU=1 SEEDS="42" bash run_lab.sh > lab_run.out 2>&1 &
+ALLOW_CPU=1 SEEDS="42" bash run_lab.sh
+```
+- 3 trainings run in order: `bert-base-cased`, `bert-base-uncased`, `bert-base-cased-caseaug` (3 epochs each),
+  then predictions, analysis, tests and packing. On CPU this takes **several hours**: start it as early as possible.
+- Detach (run keeps going): `Ctrl-b` then `d`. Re-attach: `tmux attach -t ner`.
+- If the session dies or the machine restarts: run the same two `cd` / `ALLOW_CPU=...` lines again.
+  Finished trainings are skipped (resumable).
+- Check progress from another normal terminal: `tail -f ~/Desktop/nlp-02/results/logs/lab_full_run.log`
+- Done when you see `ALL DONE` and `results/results.json` exists.
+
+📸 **S4**: `=== training bert-base-cased seed=42 ===` and the progress bar.
+📸 **S5**: `top` (or `htop`) in another terminal showing `python` using the CPU.
+📸 **S6**: an epoch evaluation line: `grep -iE "eval_f1|val F1" results/logs/lab_full_run.log | tail`
+📸 **S7**: `cat results/logs/lab_pytest.log` (the `N passed` line).
+📸 **S8**: `cat results/logs/lab_headline.txt` (metrics table for both models) and `ALL DONE`.
+
+### L4. Sanity check (normal terminal)
+```bash
+cat results/logs/lab_headline.txt
+```
+`bert-base-cased` test F1 should be about **0.90–0.92**. If it is far lower, stop and tell the team.
+
+### L5. Save the screenshots and the evidence note (normal terminal)
+Save the 8 screenshots as PNG in `~/Desktop/nlp-02/screenshots/` with exactly these names:
+`S1_lab_environment.png`, `S2_nvidia_smi.png`, `S3_env_check.png`, `S4_training_progress.png`, `S5_gpu_in_use.png`,
+`S6_epoch_eval.png`, `S7_pytest.png`, `S8_results.png` (S2/S5 keep their names; on CPU they show the no-GPU
+environment and CPU usage). Then:
+```bash
+cd ~/Desktop/nlp-02
+mkdir -p screenshots
+echo "Full training run on the Virtual Lab (CPU only, no GPU) on $(date +%F), $(nproc) cores; screenshots S1-S8 in this folder." > screenshots/VIRTUAL_LAB.txt
+ls screenshots
+```
+Create `VIRTUAL_LAB.txt` **only after** the run really finished. The report mentions the lab and shows the
+screenshots only if this file exists.
+
+### L6. Hand the results to the team for the write-up (normal terminal)
+The report text (`report/narrative.py`) and the notebook conclusion are written from the real numbers in
+`results/results.json`. Send the results to whoever writes them (with Claude Code), by **either**:
+
+- **A. Push to GitHub** (needs push access to the repo; when asked for a password, use a GitHub personal access token):
+  ```bash
+  cd ~/Desktop/nlp-02
+  git status                            # outputs/ and .venv/ must NOT be listed (they are gitignored)
+  git add results screenshots
+  git commit -m "Add Virtual Lab CPU run results and screenshots"
+  git pull --rebase && git push
+  ```
+- **B. Send the files**: `zip -qr lab_handoff.zip results screenshots`, then download `lab_handoff.zip`
+  (VS Code Explorer → right-click → Download) and send it to the team.
+
+Wait until the team says the narrative is pushed.
+
+### L7. Rebuild every deliverable (venv terminal)
+```bash
+cd ~/Desktop/nlp-02
+conda deactivate 2>/dev/null; source .venv/bin/activate      # prompt: (.venv) without (base)
+git pull                                                      # gets report/narrative.py + notebook conclusion
+python tools/build_notebook.py
+jupyter nbconvert --to notebook --execute --inplace NER_Cased_vs_Uncased.ipynb
+jupyter nbconvert --to html NER_Cased_vs_Uncased.ipynb       # -> NER_Cased_vs_Uncased.html
+python report/build_report.py                                 # -> report/Report.pdf
+python tools/update_readme.py                                 # fills the README results table
+pytest -m "not slow"                                          # all must pass
+```
+If `git pull` complains about local changes to `README.md` or the notebook: `git stash`, `git pull`, then rerun L7.
+Open `report/Report.pdf` and check:
+- page 1 has the title, Group 101 and the member table
+- the screenshots are in the execution-evidence appendix
+- it says the training ran on CPU
+
+The four metrics (Accuracy, Precision, Recall, F1) for both models must match in `results/lab_headline.txt`, the
+notebook's Results summary cell, the report's §5 table and the README table.
+
+### L8. Build the submission zip (normal or venv terminal)
+```bash
+cd ~/Desktop/nlp-02
+bash make_zip.sh                                              # -> dist/G101_NLP_Assignment2.zip
+unzip -l dist/G101_NLP_Assignment2.zip | grep -E "Report.pdf|ipynb|results.json|S8_results|Contribution" 
+unzip -l dist/G101_NLP_Assignment2.zip | grep -cE "outputs/|\.venv/"   # must print 0
+```
+Download `dist/G101_NLP_Assignment2.zip` (VS Code Explorer → right-click → Download).
+
+### L9. Push and submit (normal terminal)
+```bash
+git add -A && git status                                      # no outputs/, .venv/, large files
+git commit -m "Add executed notebook, report and results table"
+git pull --rebase && git push
+```
+**Upload `G101_NLP_Assignment2.zip` to the course portal before 16 November.** Check `G101_Contribution.xlsx`
+matches what the group agreed.
+
+### If the CPU run is too slow
+Time the L2 quick run. If the full run cannot finish before the deadline, tell the team before changing anything.
+Fewer epochs or dropping the case-augmentation run are possible, but the report must then state exactly what was run.
+
+---
+
 ## Step-by-step: from here to submission
 
 ### Part 1: Full training on the Virtual Lab (GPU)
+> No GPU on the lab machine? Use [Virtual Lab only: complete workflow (CPU, no GPU)](#virtual-lab-only-complete-workflow-cpu-no-gpu) instead.
+
 Needs: a GPU (CUDA), Python 3.10–3.12, `git`, internet access to github.com and huggingface.co, and
 **≥ 10 GB free disk** (checkpoints are about 0.4 GB each, plus temporary per-epoch checkpoints).
 Expected time: about 30–60 min on a modern GPU (estimate). On an Apple M4 it was about 19 min per training run.
