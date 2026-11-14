@@ -243,6 +243,7 @@ Optional: a short screen recording of S1→S8, if the course asks for video evid
 | Problem | Fix |
 |---|---|
 | `CUDA GPU not visible to torch` | The pinned `torch==2.15.0` may not match the lab's CUDA driver. Use the lab's pre-installed torch: `rm -rf .venv && KEEP_TORCH=1 bash run_lab.sh`. Or install the torch build for the lab's CUDA version from pytorch.org inside `.venv`, then rerun. |
+| `nvidia-smi not available` (lab machine has no GPU) | Ask the lab admin for a GPU node first. If none is available, run on CPU with the primary seed only: `ALLOW_CPU=1 SEEDS="42" bash run_lab.sh --quick`, then `ALLOW_CPU=1 SEEDS="42" bash run_lab.sh` in tmux. This is much slower (several hours for the 3 runs) and the seed-variance section then has one seed only. The report states the device from the training logs. |
 | `python3` is older than 3.10 | Use `python3.10`/`python3.11`/`python3.12` if available (edit the `python3 -m venv` line in `run_lab.sh`). |
 | `CUDA out of memory` | Close other GPU jobs. As a last resort, lower `per_device_train_batch_size` in `ner/train.py` **for both models** (the comparison must stay fair). |
 | Hugging Face download fails | Check internet access to huggingface.co. Behind a proxy, set `HTTPS_PROXY`. No token is needed. |

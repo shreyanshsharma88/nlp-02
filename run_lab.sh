@@ -5,6 +5,7 @@
 #   bash run_lab.sh              # full run: 3 seeds x 2 models + case-augmentation extra -> results/
 #   bash run_lab.sh --quick      # smoke run first (2-5 min), to check the setup (-> results_quick/)
 #   KEEP_TORCH=1 bash run_lab.sh # use the lab's pre-installed CUDA torch instead of the pinned one
+#   ALLOW_CPU=1 SEEDS="42" bash run_lab.sh   # no GPU on the lab machine: CPU run, primary seed only (slow)
 set -euo pipefail
 cd "$(dirname "$0")"
 banner() { echo; echo "=================================================================="; echo "  $*"; echo "=================================================================="; }
@@ -37,18 +38,26 @@ ENV_FILE=results/logs/lab_environment.txt
   python -c "import torch, transformers, datasets; print('torch', torch.__version__, '| cuda available:', torch.cuda.is_available(), '|', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no GPU'); print('transformers', transformers.__version__, '| datasets', datasets.__version__)"
 } 2>&1 | tee "$ENV_FILE"
 
-python -c "import torch, sys; sys.exit(0 if torch.cuda.is_available() else 1)" \
-  || { echo "ERROR: CUDA GPU not visible to torch. Try: rm -rf .venv && KEEP_TORCH=1 bash run_lab.sh  (see README troubleshooting)"; exit 1; }
+CPU_FLAG=""
+if ! python -c "import torch, sys; sys.exit(0 if torch.cuda.is_available() else 1)"; then
+  if [ "${ALLOW_CPU:-0}" = "1" ]; then
+    echo "WARNING: no CUDA GPU - running on CPU (ALLOW_CPU=1). $(nproc 2>/dev/null || echo '?') CPU cores." | tee -a "$ENV_FILE"
+    CPU_FLAG="--cpu"
+  else
+    echo "ERROR: CUDA GPU not visible to torch. Try: rm -rf .venv && KEEP_TORCH=1 bash run_lab.sh, or run on CPU: ALLOW_CPU=1 SEEDS=\"42\" bash run_lab.sh  (see README troubleshooting)"; exit 1
+  fi
+fi
+SEED_ARGS="${SEEDS:-42 13 1234}"
 
 if [ "${1:-}" = "--quick" ]; then
   banner "QUICK SMOKE RUN (500 sentences, 1 epoch) -> results_quick/"
-  python run_all.py --quick 2>&1 | tee results/logs/lab_quick_run.log
+  python run_all.py --quick $CPU_FLAG 2>&1 | tee results/logs/lab_quick_run.log
   banner "QUICK RUN FINISHED - now run: bash run_lab.sh"
   exit 0
 fi
 
-banner "STEP 3/5  Full training + predictions + analysis (python run_all.py --case-aug)"
-python run_all.py --case-aug 2>&1 | tee results/logs/lab_full_run.log
+banner "STEP 3/5  Full training + predictions + analysis (python run_all.py --case-aug --seeds $SEED_ARGS $CPU_FLAG)"
+python run_all.py --case-aug --seeds $SEED_ARGS $CPU_FLAG 2>&1 | tee results/logs/lab_full_run.log
 
 banner "STEP 4/5  Tests (pytest)"
 pytest -q -m "not slow" 2>&1 | tee results/logs/lab_pytest.log || true
